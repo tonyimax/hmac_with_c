@@ -12,6 +12,7 @@ void hmac_sha256(const unsigned char *key,
                  unsigned int *md_len);
 
 void HMAC_SHA256(const uint8_t *key, size_t keylen, const uint8_t *data, size_t datalen, uint8_t *hmac);
+void HMAC_SM3(const uint8_t *key, size_t keylen, const uint8_t *data, size_t datalen, uint8_t *hmac);
 
 // 辅助函数：打印十六进制
 void print_hex(const uint8_t* data, size_t len) {
@@ -26,6 +27,7 @@ void print_hex(const uint8_t* data, size_t len) {
 int main() {
     std::cout << "C HMAC SHA256 TEST: hmac_sha256->" ;
     char *key = "secretKey";
+    //char *key = "secretKey_secretKey_secretKey_secretKey_secretKey_secretKey_secretKey_";
     int key_len = strlen(key);
     char* d = "Hello, HMAC-SM3!";
     int dlen = strlen(d);
@@ -36,11 +38,18 @@ int main() {
     print_hex(reinterpret_cast<uint8_t*>(md),md_len);
 
     uint8_t key1[] = "secretKey";
+    //ba993015a6e3cee9d632f52144c69db853f7a04ca6335139d2d538d0e49ab30a
+    //uint8_t key1[] = "secretKey_secretKey_secretKey_secretKey_secretKey_secretKey_secretKey_";
+    //548cbc431366c89cc2d6d9fa598566e559040500a8eab06fc6dceb5e483bbfa0
     uint8_t data1[] = "Hello, HMAC-SM3!";
     uint8_t hmac1[SHA256_DIGEST_LENGTH];
-    HMAC_SHA256(key1,key_len,data1,dlen,hmac1);
+    HMAC_SHA256(key1,sizeof(key1)-1,data1,dlen,hmac1);
     std::cout << "C HMAC SHA256 TEST: HMAC_SHA256->" ;
     print_hex(hmac1,SHA256_DIGEST_LENGTH);
+
+    HMAC_SM3(key1,sizeof(key1)-1,data1,dlen,hmac1);
+
+
 
     return 0;
 }
@@ -214,4 +223,62 @@ void HMAC_SHA256(const uint8_t *key, //HMAC加密密钥
     SHA256_Update(&ctx, k_opad, SHA256_BLOCK_SIZE);//与密钥位异域运算后的外填充数据
     SHA256_Update(&ctx, inner_hash, SHA256_DIGEST_SIZE);//使用SHA256哈希算法计算出的哈希值数据
     SHA256_Final(hmac, &ctx);//最终输出的HMAC哈希值
+}
+
+
+unsigned char * SM3_HASH(const uint8_t *key,size_t keylen,unsigned char *md) {
+
+}
+
+void HMAC_SM3(const uint8_t *key, //HMAC加密密钥
+                 size_t keylen,//HMAC加密密钥长度
+                 const uint8_t *data,//待加密的原始数据
+                 size_t datalen,//数据长度
+                 uint8_t *hmac)//HMAC加密输出结果
+{
+    uint8_t k_ipad[SHA256_BLOCK_SIZE];  // 用于内填充的数组
+    uint8_t k_opad[SHA256_BLOCK_SIZE];  // 用于外填充的数组
+    uint8_t key_hash[SHA256_DIGEST_SIZE];  // 用于存储密钥的哈希值
+    uint8_t inner_hash[SHA256_DIGEST_SIZE];  // 存储内填充和数据的哈希结果
+    size_t i;
+
+    if (keylen > SHA256_BLOCK_SIZE) {
+        // 如果密钥长度大于块大小，先对密钥进行哈希处理
+        SM3_HASH(key, keylen, key_hash);
+        key = key_hash;
+        keylen = SHA256_DIGEST_SIZE;
+    }
+
+    // 初始化内填充和外填充数组
+    memset(k_ipad, 0x36, SHA256_BLOCK_SIZE);
+    memset(k_opad, 0x5C, SHA256_BLOCK_SIZE);
+
+    std::cout << "===>k_ipad: ";
+    print_hex(k_ipad, SHA256_BLOCK_SIZE);
+    std::cout << "===>k_opad: ";
+    print_hex(k_opad, SHA256_BLOCK_SIZE);
+    for (i = 0; i < keylen; i++) {
+        k_ipad[i] ^= key[i];  // 内填充与密钥进行异或操作
+        k_opad[i] ^= key[i];  // 外填充与密钥进行异或操作
+    }
+    std::cout << "===>XOR->k_ipad: ";
+    print_hex(k_ipad, SHA256_BLOCK_SIZE);
+    std::cout << "===>XOR->k_opad: ";
+    print_hex(k_opad, SHA256_BLOCK_SIZE);
+    std::cout << "===>KEY XOR END";
+
+    // 计算内填充和数据的哈希值
+    //SHA256_CTX ctx;
+    //SHA256_Init(&ctx);
+    //SHA256_Update(&ctx, k_ipad, SHA256_BLOCK_SIZE);//与密钥位异域运算后的内填充数据
+    //SHA256_Update(&ctx, data, datalen);//要进行HAMC运算的原始数据
+    //SHA256_Final(inner_hash, &ctx);//使用SHA256哈希算法计算出的哈希值
+    //push k_ipad and data to get sm3 hash into inner_hash
+
+    // 使用外填充和内填充的哈希值再次进行哈希处理得到最终的HMAC值
+    //SHA256_Init(&ctx);
+    //SHA256_Update(&ctx, k_opad, SHA256_BLOCK_SIZE);//与密钥位异域运算后的外填充数据
+    //SHA256_Update(&ctx, inner_hash, SHA256_DIGEST_SIZE);//使用SHA256哈希算法计算出的哈希值数据
+    //SHA256_Final(hmac, &ctx);//最终输出的HMAC哈希值
+    //push k_opad and inner_hash to get hash into hmac we need
 }
