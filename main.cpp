@@ -24,7 +24,7 @@ void print_hex(const uint8_t* data, size_t len) {
 }
 
 int main() {
-    std::cout << "C HMAC SHA256 TEST: " ;
+    std::cout << "C HMAC SHA256 TEST: hmac_sha256->" ;
     char *key = "secretKey";
     int key_len = strlen(key);
     char* d = "Hello, HMAC-SM3!";
@@ -38,6 +38,9 @@ int main() {
     uint8_t key1[] = "secretKey";
     uint8_t data1[] = "Hello, HMAC-SM3!";
     uint8_t hmac1[SHA256_DIGEST_LENGTH];
+    HMAC_SHA256(key1,key_len,data1,dlen,hmac1);
+    std::cout << "C HMAC SHA256 TEST: HMAC_SHA256->" ;
+    print_hex(hmac1,SHA256_DIGEST_LENGTH);
 
     return 0;
 }
