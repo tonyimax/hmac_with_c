@@ -164,10 +164,23 @@ void hmac_sha256(const unsigned char *key,
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-//#include "sha256.h"  // 假设你已经有了SHA-256的实现
-#define SHA256_BLOCK_SIZE 64
-#define SHA256_DIGEST_SIZE 32
-void HMAC_SHA256(const uint8_t *key, size_t keylen, const uint8_t *data, size_t datalen, uint8_t *hmac) {
+#define SHA256_BLOCK_SIZE 64  //数据块长度
+#define SHA256_DIGEST_SIZE 32 //哈希函数输出长度
+
+//HMAC哈希算法步骤：
+//1.输入： 密钥及长度 ，原始数据及长度，HMAC结果输出变量
+//2.判断输入密钥长度，
+//     密钥长度大于64： 使用哈希算法计算出一个新的32字节长度的密钥
+//     密钥长度小于64： 填充0x00密钥满足32字节
+//3.使用密钥与内填充及外填充进行位异域运算，得到位异域运算后的内填充及外填充数据
+//4.使用位异域运算后的内填充数据与原始数据进行哈希运算，得到内填充与原始数据的哈希值
+//5.使用得到内填充与原始数据的哈希值 与 外填充进行位异域运算后的数据 进行哈希运算，得到最终的HMAC哈希值
+void HMAC_SHA256(const uint8_t *key, //HMAC加密密钥
+                 size_t keylen,//HMAC加密密钥长度
+                 const uint8_t *data,//待加密的原始数据
+                 size_t datalen,//数据长度
+                 uint8_t *hmac)//HMAC加密输出结果
+{
     uint8_t k_ipad[SHA256_BLOCK_SIZE];  // 用于内填充的数组
     uint8_t k_opad[SHA256_BLOCK_SIZE];  // 用于外填充的数组
     uint8_t key_hash[SHA256_DIGEST_SIZE];  // 用于存储密钥的哈希值
